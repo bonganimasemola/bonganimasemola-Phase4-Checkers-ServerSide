@@ -4,7 +4,7 @@ Introduction:
 This project is written in react and python, flask for the api backend.
 
 Features:
-Interactive game board built with React
+Interactive game board built with React & Flask
 Getting Started
 Bootstarting the project.
 
