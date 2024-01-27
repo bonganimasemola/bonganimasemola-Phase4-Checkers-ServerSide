@@ -1,21 +1,44 @@
-from flask import Flask, jsonify, request
+from flask import Flask redirect, url_for, request, jsonify
 from flask_cors import CORS
 from models import db, Player  
 import json
+from flask_login import LoginManager,login_user, login_required, logout_user, current_user
 
-app = Flask(__name__)
+app = Flask(_name_)
 CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  
 db.init_app(app)
+app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  
+
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
 
 
 with app.app_context():
     db.create_all()
 
-@app.route('/')
-def home():
-    data = {'Server side': 'Checkers'}
-    return jsonify(data), 200
+@login_manager.player_loader
+def load_user(user_id):
+    return Player.query.get(int(user_id))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Login failed. Check your username and password.')
+    return render_template('login.html')
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return f'Hello, {current_user.username}! You are now logged in.'
 
 @app.route('/players', methods=['GET'])
 def get_players():
@@ -50,5 +73,12 @@ def create_player():
         db.session.rollback()
         return jsonify({'message': 'Error creating player'}), 500
 
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
 if __name__ == '__main__':
-    app.run(port=5555, debug=True)
+    db.create_all()
+    app.run(port=5555,debug=True)
