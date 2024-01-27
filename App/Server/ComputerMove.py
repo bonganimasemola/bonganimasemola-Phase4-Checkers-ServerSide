@@ -1,77 +1,42 @@
-from Moves import Moves
-import  random
-class Opponent(Moves):
-    """Represents possible moves for a computer piece."""
-    computer_piece = {
-        "W": ["B", "KB"],
-        "KW": ["B", "KB"],
-    }
+from All_pieces import Wmoves, KingWMoves
+from UpdateBoard import UpdateBoard
+import random
+
+def is_within_board(x, y, board):
+    return 0 <= x < len(board[0]) and 0 <= y < len(board)
+
+def PCMove(board):
+    random.seed()  # Initialize the pseudo-random number generator with a random seed
     
-    def __init__(self, board, all_moves, piece, co):
-        """Initializes the Moves object with a copy of the board."""
-        self.board = [row[:] for row in board]
-        self.all_moves = all_moves
-        self.piece = piece
-        self.to_capture = Moves.capture_piece.get(piece, None).copy()
-        self.co = co
+    for r in range(len(board)):
+        for c in range(len(board[r])):
+            piece = board[r][c]
+            if piece == "W" or piece == "KW":
+                WM = Wmoves(board, {"x": c, "y": r})
+                KW = KingWMoves(board, {"x": c, "y": r})
+                WM_all_moves = WM.moves()
+                KW_all_moves = KW.moves()
+                
+                capture_moves_wm = [move for move in WM_all_moves if move.get("capture") and is_within_board(move["to"]["x"], move["to"]["y"], board)]
+                regular_moves_wm = [move for move in WM_all_moves if not move.get("capture") and is_within_board(move["to"]["x"], move["to"]["y"], board)]
 
-    def comp_moves(self):
-        print("Calculating moves for", self.piece)
-        computer_moves = []
-
-        if self.board[self.co["y"]][self.co["x"]] != self.piece:
-            print("Piece not found at", self.co)
-            return computer_moves
-
-        for move in self.all_moves:
-            if move["to"] and len(move["to"]) > 0:
-                to = random.choice(move.get("to", []))
-                capture = random.choice(move.get("capture", []))
-
-                y_move = to["y"] + self.co["y"]
-                x_move = to["x"] + self.co["x"]
-
-                if 0 <= x_move < 8 and 0 <= y_move < 8:
-                    move_position = self.board[y_move][x_move].strip()
-
-                    print("Checking move:", move, "to:", {"x": x_move, "y": y_move}, "position:", move_position)  # Debugging
-
-                if move_position == "":  # Update this line
-                    position = {
-                        "from": {"x": self.co["x"], "y": self.co["y"]},
-                        "to": {"x": x_move, "y": y_move},
-                    }
-
-                    if capture:
-                        result = self.handle_capture(capture, x_move, y_move)
-                        if result:
-                            position["capture"] = result
-                            computer_moves.append(position)
-                            continue
-
-                    computer_moves.append({**position, "capture": False})
-                else:
-                    print("Position not empty. Current state:", self.board)
-
-            else:
-                print("Move out of board range:", move, "to:", {"x": x_move, "y": y_move})
-
-        return computer_moves
-
-    def handle_capture(self, capture, x_move, y_move):
-        if not self.to_capture:
-            return None
-
-        x, y = capture
-        cap_x, cap_y = x_move + capture["x"], y_move + capture["y"]
-
-
-        if 0 <= cap_x < 8 and 0 <= cap_y < 8:
-            capture_position = self.board[cap_y][cap_x].strip()
-
-            if capture_position in self.to_capture:
-                return {"x": cap_x, "y": cap_y}
-
-        return None
+                capture_moves_kw = [move for move in KW_all_moves if move.get("capture") and is_within_board(move["to"]["x"], move["to"]["y"], board)]
+                regular_moves_kw = [move for move in KW_all_moves if not move.get("capture") and is_within_board(move["to"]["x"], move["to"]["y"], board)]
+                
+                if capture_moves_wm or capture_moves_kw:
+                    # Priority to capture moves
+                    all_capture_moves = capture_moves_wm + capture_moves_kw
+                    computer_move = random.choice(all_capture_moves)
+                    update_board = UpdateBoard(board)
+                    board = update_board.move_capture(computer_move)
+                    return computer_move, board
+                elif regular_moves_wm or regular_moves_kw:
+                    # If no capture, make a regular move
+                    all_regular_moves = regular_moves_wm + regular_moves_kw
+                    computer_move = random.choice(all_regular_moves)
+                    update_board = UpdateBoard(board)
+                    board = update_board.move_only(computer_move)
+                    return computer_move, board
     
-    
+    return None, board  # No available moves for the computer
+
