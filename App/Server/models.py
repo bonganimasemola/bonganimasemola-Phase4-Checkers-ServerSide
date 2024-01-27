@@ -6,6 +6,7 @@ db = SQLAlchemy()
 class Player(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     total_games_played = db.Column(db.Integer, default=0)
     total_wins = db.Column(db.Integer, default=0)
     total_losses = db.Column(db.Integer, default=0)
