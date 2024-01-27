@@ -2,16 +2,21 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Player, Game, Move, Piece
 from flask import Flask
-from flask_migrate import Migrate
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+
+# Initialize the Flask application context
+with app.app_context():
+    # Initialize the SQLAlchemy extension
+    db.init_app(app)
+    
+    # Create the database tables (if they do not exist)
+    db.create_all()
 
 def seed_data():
-    app = Flask(__name__)
-    db.init_app(app)
-    migrate = Migrate(app, db)
-
+    # Your seed data logic goes here
     with app.app_context():
-        db.create_all()
-
         player1 = Player(username='Player1')
         player2 = Player(username='Player2')
         db.session.add_all([player1, player2])
@@ -30,3 +35,4 @@ def seed_data():
 
 if __name__ == '__main__':
     seed_data()
+    print("Seeded database with example data")

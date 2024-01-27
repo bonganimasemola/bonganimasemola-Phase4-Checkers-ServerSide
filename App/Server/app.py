@@ -2,23 +2,29 @@ from flask import Flask, redirect, url_for, request, jsonify
 from flask_cors import CORS
 from models import db, Player  
 import json
-from flask_login import LoginManager,login_user, login_required, logout_user, current_user
+# from flask_login import LoginManager,login_user, login_required, logout_user, current_user
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
-app = Flask(_name_)
-CORS(app)
-db.init_app(app)
-app.config['SECRET_KEY'] = 'your_secret_key'
+app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  
+app.config['SECRET_KEY'] = 'your_secret_key'
+CORS(app)
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
+
+
+# login_manager = LoginManager(app)
+# login_manager.login_view = 'login'
 
 
 with app.app_context():
     db.create_all()
 
-@login_manager.player_loader
+# @login_manager.player_loader
 def load_user(user_id):
     return Player.query.get(int(user_id))
 
@@ -37,7 +43,7 @@ def login():
 
 #the below may or may not change depending on the front-end  
 @app.route('/dashboard')
-@login_required
+# @login_required
 def dashboard():
     return f'Hello, {current_user.username}! You are now logged in.'
 
@@ -74,11 +80,10 @@ def create_player():
         return jsonify({'message': 'Error creating player'}), 500
 
 @app.route('/logout')
-@login_required
+# @login_required
 def logout():
     logout_user()
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    db.create_all()
     app.run(port=5555,debug=True)
