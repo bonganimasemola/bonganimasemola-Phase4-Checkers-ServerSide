@@ -1,4 +1,4 @@
-from flask import Flask redirect, url_for, request, jsonify
+from flask import Flask, redirect, url_for, request, jsonify
 from flask_cors import CORS
 from models import db, Player  
 import json
@@ -27,14 +27,15 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password, password):
-            login_user(user)
+        user = Player.query.filter_by(username=username).first()
+        if Player and check_password_hash(user.password, password):
+            login_user(Player)
             return redirect(url_for('dashboard'))
         else:
             flash('Login failed. Check your username and password.')
     return render_template('login.html')
 
+#the below may or may not change depending on the front-end  
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -50,7 +51,6 @@ def get_players():
 def create_player():
     data = request.get_json()
 
-    
     if 'username' not in data or 'email' not in data:
         return jsonify({'message': 'Username and email are required'}), 400
 
