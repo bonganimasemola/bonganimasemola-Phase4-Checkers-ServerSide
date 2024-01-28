@@ -11,10 +11,8 @@ import json
 from flask_login import LoginManager,login_user, login_required, logout_user, current_user, UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-# from flask_login import current_user, login_required
 
-from flask import jsonify
-from flask_login import UserMixin
+
 
 app = Flask(__name__, template_folder='/Users/bonganimasemola/Development/coding/PHASE4/bonganimasemola-Phase4-Checkers-ServerSide/App/Server/templates')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
@@ -26,13 +24,34 @@ db.init_app(app)
 # db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+#mock up User class for testing
 class User(UserMixin):
     def __init__(self, user_id):
         self.id = user_id
+        
+# Sample Game class for testing
+# class Game:
+#     def __init__(self, game_id, board, player_id):
+#         self.id = game_id
+#         self.board = board
+#         self.player_id = player_id
+#         self.winner_id = None
+#         self.date_finished = None
+#         self.is_draw = False
+        
+# Helper function to simulate login during testing
+# def simulate_login(user_id):
+#     user = User(user_id)
+#     login_user(user)
+
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User(user_id)
 
 
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
 
 
 with app.app_context():
@@ -79,6 +98,27 @@ def login():
             flash('Login failed. Check your username and password.')
     return render_template('login.html')
 
+#the below is for a simulated logged in user for testing puposes
+
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if request.method == 'POST':
+#         username = request.form.get('username')
+#         password = request.form.get('password')
+
+#         # Your authentication logic here...
+#         # Check username and password against your database or authentication system
+
+#         if authentication_successful:
+#             user = User(user_id)  # Replace with the actual user ID
+#             login_user(user)
+#             return jsonify({"message": "Login successful."}), 200
+#         else:
+#             return jsonify({"message": "Login failed. Invalid credentials."}), 401
+#     else:
+#         return jsonify({"message": "Please use POST method to log in."}), 405
+
+
 #the below may or may not change depending on the front-end  
 @app.route('/dashboard')
 @login_required
@@ -90,6 +130,15 @@ def get_players():
     players = Player.query.all()
     player_list = [{'id': player.id, 'username': player.username} for player in players]
     return jsonify(player_list), 200
+
+@app.route('/players/<int:player_id>', methods=['GET'])
+def get_player_by_id(player_id):
+    player = Player.query.get(player_id)
+
+    if player:
+        return jsonify({'id': player.id, 'username': player.username}), 200
+    else:
+        return jsonify({'error': 'Player not found'}), 404
 
 @app.route('/players', methods=['POST'])
 def create_player():
@@ -161,7 +210,170 @@ def forfeit_game(game_id):
 
     return jsonify({"message": "Game forfeited successfully.", "winner_id": game.winner_id}), 200
 
+@app.route('/games', methods=['POST'])
+def create_game():
+    data = request.get_json()
 
+    # Check if 'board' key is present in the JSON data
+    if 'board' not in data:
+        return jsonify({'error': 'Missing "board" key in JSON data'}), 400
+
+    initial_board = data['board']
+
+    # Validate that 'board' is a list of lists (2D list)
+    if not isinstance(initial_board, list) or not all(isinstance(row, list) for row in initial_board):
+        return jsonify({'error': 'Invalid format for "board" data'}), 400
+
+    # Create a new game
+    new_game = Game(board=initial_board)
+    
+    try:
+        db.session.add(new_game)
+        db.session.commit()
+        return jsonify({'message': 'Game created successfully', 'game_id': new_game.id}), 201
+    except Exception as e:
+        # Handle database errors
+        db.session.rollback()
+        return jsonify({'error': 'Failed to create game', 'details': str(e)}), 500
+    finally:
+        db.session.close()
+
+@app.route('/games/<int:game_id>', methods=['GET'])
+def get_game(game_id):
+    game = Game.query.get(game_id)
+    if not game:
+        return jsonify({'error': 'Game not found'}), 404
+
+    return jsonify({
+        'message': 'Game retrieved successfully',
+        'game_id': game.id,
+        'board': game.board,
+    }), 200
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    name = data['name']
+    email = data['email']
+    password = data['password']
+
+    # Check for existing user with the same email
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({'error': 'User already exists'}), 400
+
+    # Create a new user
+    new_user = User(name=name, email=email, password=password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({'message': 'User created successfully'}), 201
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data['email']
+    password = data['password']
+
+    user = User.query.filter_by(email=email).first()
+    if user and user.password == password:
+        # Create a session token or similar for authentication
+        return jsonify({'message': 'Login successful'}), 200
+    else:
+        return jsonify({'error': 'Invalid email or password'}), 401
+
+
+@app.route('/games/<int:game_id>/move', methods=['POST'])
+def make_move(game_id):
+    data = request.get_json()
+    move = data['move']  
+
+    game = Game.query.get(game_id)
+    if not game:
+        return jsonify({'error': 'Game not found'}), 404
+
+    # Get the current board state
+    current_board = game.board
+
+    # Validate the move and get the updated board
+    updated_board, promotion = validate_and_make_move(current_board, move)
+
+    if updated_board:
+        # Update the game's board
+        game.board = updated_board
+
+        # Check for promotions
+        if promotion:
+            handle_promotion(updated_board, promotion)
+
+        # Save the updated game state to the database
+        db.session.commit()
+
+        return jsonify({'message': 'Move successful', 'updated_board': updated_board})
+    else:
+        return jsonify({'error': 'Invalid move'}), 400
+
+
+def validate_and_make_move(current_board, move):
+    # Assuming your classes are imported properly
+    piece = current_board[move["from"]["y"]][move["from"]["x"]]
+
+    # Validate the move based on the piece type (W, KW, B, KB)
+    if piece == "W" :
+        moves_instance = Wmoves(current_board, move["from"])
+    elif  piece == "KW":
+        moves_instance = KingWMoves(current_board, move["from"])
+    elif piece == "KB":
+        moves_instance = KingBMoves(current_board, move["from"])
+    elif piece == "B": 
+        moves_instance = Bmoves(current_board, move["from"])
+    else:
+        return None, None  # Invalid piece type
+
+    all_moves = moves_instance.moves()
+
+    # Check if the move is in the list of valid moves
+    if move in all_moves:
+        updated_board = update_board(current_board, move)
+        promotion = check_for_promotion(updated_board, move)
+        return updated_board, promotion
+    else:
+        return None, None  # Invalid move
+
+
+def update_board(board, move):
+    
+    update_board_instance = UpdateBoard(board)
+    updated_board = update_board_instance.move_capture(move)  # Assuming move is a capture move
+    return updated_board
+
+
+def check_for_promotion(board, move):
+    co = move["to"]  # Assuming the coordinates are in "to" key
+    piece = board[co["y"]][co["x"]]
+
+    if piece == "W" and co["y"] == 7:
+        return "KW"
+    elif piece == "B" and co["y"] == 0:
+        return "KB"
+    else:
+        return None
+
+
+def handle_promotion(board, promotion, move):
+   
+    co = move["to"]  # Assuming the coordinates are in "to" key
+
+    if promotion == "KW":
+        board[co["y"]][co["x"]] = "KW"
+    elif promotion == "KB":
+        board[co["y"]][co["x"]] = "KB"
+        
+    
+        
+# Update the board accordingly
 # # Update the game with a loss
 # gameLogic = GameLogic(game.board)
 # gameLogic.update_game_loss()
