@@ -1,5 +1,5 @@
 from Moves import Moves
-from ComputerMove import Opponent
+
 
 class Bmoves(Moves):
     def __init__(self, board, co):

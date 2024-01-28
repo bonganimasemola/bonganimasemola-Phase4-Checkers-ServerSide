@@ -2,9 +2,13 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Player, Game, Move, Piece
 from flask import Flask
+from app import app
+
+
+
+
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 
 # Initialize the Flask application context
 with app.app_context():
