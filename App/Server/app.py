@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, request, jsonify
+from flask import Flask, redirect, url_for, request, jsonify, render_template
 from datetime import datetime
 from GameStatus import GameLogic
 # from UpdateBoard import UpdateBoard
@@ -6,13 +6,17 @@ from GameStatus import GameLogic
 # from All_pieces import Bmoves, KingBMoves, Wmoves, KingWMoves
 from flask_cors import CORS
 from models import db, Player, Game, Move, Piece
+from werkzeug.security import check_password_hash
 import json
-# from flask_login import LoginManager,login_user, login_required, logout_user, current_user
+from flask_login import LoginManager,login_user, login_required, logout_user, current_user, UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-# from flask_login import current_user
+# from flask_login import current_user, login_required
 
-app = Flask(__name__)
+from flask import jsonify
+from flask_login import UserMixin
+
+app = Flask(__name__, template_folder='/Users/bonganimasemola/Development/coding/PHASE4/bonganimasemola-Phase4-Checkers-ServerSide/App/Server/templates')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -22,11 +26,13 @@ db.init_app(app)
 # db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+class User(UserMixin):
+    def __init__(self, user_id):
+        self.id = user_id
 
 
-
-# login_manager = LoginManager(app)
-# login_manager.login_view = 'login'
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
 
 
 with app.app_context():
@@ -49,33 +55,35 @@ def get_opponent_id(user_id):
         return game.player_id
     return None
     
+    
+# FRONT-END FACING ROUTES:
 @app.route('/')
 def home():
     data = {'Server side': 'Checkers'}
     return jsonify(data), 200
 
-# @login_manager.player_loader
-# def load_user(user_id):
-#     return Player.query.get(int(user_id))
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == 'POST':
-#         username = request.form['username']
-#         password = request.form['password']
-#         user = Player.query.filter_by(username=username).first()
-#         if Player and check_password_hash(user.password, password):
-#             login_user(Player)
-#             return redirect(url_for('dashboard'))
-#         else:
-#             flash('Login failed. Check your username and password.')
-#     return render_template('login.html')
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = Player.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Login failed. Check your username and password.')
+    return render_template('login.html')
 
 #the below may or may not change depending on the front-end  
-# @app.route('/dashboard')
-# # @login_required
-# def dashboard():
-#     return f'Hello, {current_user.username}! You are now logged in.'
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return f'Hello, {current_user.username}! You are now logged in.'
 
 @app.route('/players', methods=['GET'])
 def get_players():
@@ -83,30 +91,34 @@ def get_players():
     player_list = [{'id': player.id, 'username': player.username} for player in players]
     return jsonify(player_list), 200
 
-# @app.route('/players', methods=['POST'])
-# def create_player():
-#     data = request.get_json()
-#     try:
-#         if 'username' not in data or 'email' not in data:
-#             new_player = Player(username=data['username'], email=data['email'])
-#             db.session.add(new_player)
-#             db.session.commit()
-#             return jsonify({"username": new_player.username, "email":  new_player.email}), 201
-#         else:
-#             return jsonify({'message': 'Missing username or email in the request'}), 400
-#     except Exception as e:
-#         print(f"Error creating player: {e}")
-#         db.session.rollback()
-#         return jsonify({'message': 'Error creating player'}), 500
+@app.route('/players', methods=['POST'])
+def create_player():
+    data = request.get_json()
+    try:
+        if 'username' in data and 'email' in data and 'password' in data:
+            new_player = Player(username=data['username'], email=data['email'])
+            new_player.set_password(data['password'])
+            db.session.add(new_player)
+            db.session.commit()
+            return jsonify({"username": new_player.username, "email": new_player.email}), 201
+        else:
+            return jsonify({'message': 'Missing username, email, or password in the request'}), 400
+    except Exception as e:
+        print(f"Error creating player: {e}")
+        db.session.rollback()
+        return jsonify({'message': 'Error creating player'}), 500
 
-# @app.route('/logout')
-# # @login_required
-# def logout():
-#     logout_user()
-#     return redirect(url_for('login'))
+@app.route('/logout')
+@login_required
+def logout():
+    if current_user.is_authenticated:
+        logout_user()
+    return redirect(url_for('login'))
 
+
+# BACK-END FACING ROUTES:
 @app.route('/start_game', methods=['POST'])
-# @login_required
+@login_required
 def start_game():
     # user_id = Player.id  # Uncomment this line if using Flask-Login
     user_id = 1  # Replace with your actual way of getting user id
@@ -127,7 +139,7 @@ def start_game():
 
 
 @app.route('/forfeit_game/<int:game_id>', methods=['POST'])
-# @login_required
+@login_required
 def forfeit_game(game_id):
     user_id = current_user.id
 
