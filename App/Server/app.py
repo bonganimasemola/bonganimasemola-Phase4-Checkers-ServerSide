@@ -107,6 +107,29 @@ def create_player():
         print(f"Error creating player: {e}")
         db.session.rollback()
         return jsonify({'message': 'Error creating player'}), 500
+    
+@app.route('/forfeit_game/<int:game_id>', methods=['POST'])
+@login_required
+def forfeit_game(game_id):
+    user_id = current_user.id
+
+    game = Game.query.get(game_id)
+    
+    if game is None:
+        return jsonify({"error": "Game not found."}), 404
+
+    if game.player_id != user_id:
+        return jsonify({"error": "You are not authorized to forfeit this game."}), 403
+
+    # Update the game with a loss
+    gameLogic = GameLogic(game.board)
+    gameLogic.update_game_loss()
+    game.date_finished = datetime.utcnow()
+    game.winner_id = get_opponent_id(user_id)
+    game.is_draw = False
+    db.session.commit()
+
+    return jsonify({"message": "Game forfeited successfully.", "winner_id": game.winner_id}), 200
 
 @app.route('/logout')
 @login_required
@@ -138,28 +161,6 @@ def start_game():
 
 
 
-@app.route('/forfeit_game/<int:game_id>', methods=['POST'])
-@login_required
-def forfeit_game(game_id):
-    user_id = current_user.id
-
-    game = Game.query.get(game_id)
-    
-    if game is None:
-        return jsonify({"error": "Game not found."}), 404
-
-    if game.player_id != user_id:
-        return jsonify({"error": "You are not authorized to forfeit this game."}), 403
-
-    # Update the game with a loss
-    gameLogic = GameLogic(game.board)
-    gameLogic.update_game_loss()
-    game.date_finished = datetime.utcnow()
-    game.winner_id = get_opponent_id(user_id)
-    game.is_draw = False
-    db.session.commit()
-
-    return jsonify({"message": "Game forfeited successfully.", "winner_id": game.winner_id}), 200
 
 # # Update the game with a loss
 # gameLogic = GameLogic(game.board)
