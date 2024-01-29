@@ -64,13 +64,21 @@ class Moves:
         x, y = capture
         cap_x, cap_y = x_move + capture["x"], y_move + capture["y"]
 
-
         if 0 <= cap_x < 8 and 0 <= cap_y < 8:
             capture_position = self.board[cap_y][cap_x].strip()
 
             if capture_position in self.to_capture:
-                return {"x": cap_x, "y": cap_y}
+                result = {"x": cap_x, "y": cap_y}
+
+                # Check for promotion for white pieces
+                if result["y"] == 7 and self.piece == "W":
+                    self.board[result["y"]][result["x"]] = "KW"
+                    print(f"Promoted White to KingWhite at {result}")
+                # Check for promotion for black pieces
+                elif result["y"] == 0 and self.piece == "B":
+                    self.board[result["y"]][result["x"]] = "KB"
+                    print(f"Promoted Black to KingBlack at {result}")
+
+                return result
 
         return None
-    
-    

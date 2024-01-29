@@ -32,25 +32,6 @@ class User(UserMixin):
     def __init__(self, user_id):
         self.id = user_id
         
-# Sample Game class for testing
-# class Game:
-#     def __init__(self, game_id, board, player_id):
-#         self.id = game_id
-#         self.board = board
-#         self.player_id = player_id
-#         self.winner_id = None
-#         self.date_finished = None
-#         self.is_draw = False
-        
-# Helper function to simulate login during testing
-# def simulate_login(user_id):
-#     user = User(user_id)
-#     login_user(user)
-
-# @login_manager.user_loader
-# def load_user(user_id):
-#     return User(user_id)
-
 
 
 
@@ -98,28 +79,7 @@ def login():
             flash('Login failed. Check your username and password.')
     return render_template('login.html')
 
-#the below is for a simulated logged in user for testing puposes
 
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == 'POST':
-#         username = request.form.get('username')
-#         password = request.form.get('password')
-
-#         # Your authentication logic here...
-#         # Check username and password against your database or authentication system
-
-#         if authentication_successful:
-#             user = User(user_id)  # Replace with the actual user ID
-#             login_user(user)
-#             return jsonify({"message": "Login successful."}), 200
-#         else:
-#             return jsonify({"message": "Login failed. Invalid credentials."}), 401
-#     else:
-#         return jsonify({"message": "Please use POST method to log in."}), 405
-
-
-#the below may or may not change depending on the front-end  
 @app.route('/dashboard')
 @login_required
 def dashboard():
