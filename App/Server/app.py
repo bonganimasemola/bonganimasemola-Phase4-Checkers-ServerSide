@@ -70,13 +70,18 @@ def login():
         password = data.get('password')
 
         user = Player.query.filter_by(username=username).first()
-        if user and user.check_password(password):  # Use check_password method
+        if user and user.check_password(password):
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
             flash('Login failed. Check your username and password.')
 
     return render_template('login.html')
+
+
+def get_player_by_id(user_id):
+    with db.session.begin():
+        return Player.query.get(int(user_id))
 
 @app.route('/dashboard')
 @login_required
