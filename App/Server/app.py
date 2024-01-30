@@ -62,6 +62,28 @@ def load_user(user_id):
     return Player.query.get(int(user_id))
 
 
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({'error': 'Missing username or password'}), 400
+
+    # Query the database to find the user by username
+    user = Player.query.filter_by(username=username).first()
+
+    if user and user.check_password(password):
+        # Use Flask-Login's login_user function to log in the user
+        login_user(user)
+        return jsonify({'message': 'Login successful'}), 200
+    else:
+        return jsonify({'error': 'Invalid username or password'}), 401
+
+
+
 @app.route('/players', methods=['GET'])
 def get_players():
     players = Player.query.all()
@@ -108,6 +130,7 @@ def logout():
 @app.route('/start_game', methods=['POST'])
 @login_required
 def start_game():
+    print("Received request to start_game")
     if current_user.is_authenticated:
         user_id = current_user.id
 
@@ -132,6 +155,11 @@ def start_game():
     else:
         # Handle the case where the user is not authenticated
         return jsonify({"error": "User not authenticated."}), 401
+    
+def get_existing_game(user_id):
+    # Query the database to find an existing game for the given user_id
+    existing_game = Game.query.filter_by(player_id=user_id).first()
+    return existing_game
 
 # Add a helper function to retrieve an existing game
 # def get_existing_game(user_id):
@@ -203,24 +231,24 @@ def get_game(game_id):
     }), 200
 
 
-@app.route('/register', methods=['POST'])
-def register():
-    data = request.get_json()
-    name = data['name']
-    email = data['email']
-    password = data['password']
+# @app.route('/register', methods=['POST'])
+# def register():
+#     data = request.get_json()
+#     name = data['name']
+#     email = data['email']
+#     password = data['password']
 
    
-    existing_user = User.query.filter_by(email=email).first()
-    if existing_user:
-        return jsonify({'error': 'User already exists'}), 400
+#     existing_user = User.query.filter_by(email=email).first()
+#     if existing_user:
+#         return jsonify({'error': 'User already exists'}), 400
 
     
-    new_user = User(name=name, email=email, password=password)
-    db.session.add(new_user)
-    db.session.commit()
+#     new_user = User(name=name, email=email, password=password)
+#     db.session.add(new_user)
+#     db.session.commit()
 
-    return jsonify({'message': 'User created successfully'}), 201
+#     return jsonify({'message': 'User created successfully'}), 201
 
 
 
