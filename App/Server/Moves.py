@@ -14,7 +14,9 @@ class Moves:
         self.piece = piece
         self.to_capture = Moves.capture_piece.get(piece, None).copy()
         self.co = co
-
+        
+    def get_board(self):
+        return self.board
     def moves(self):
         print("Calculating moves for", self.piece)
         all_moves = []

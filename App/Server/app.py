@@ -127,34 +127,40 @@ def logout():
 
 
 # BACK-END FACING ROUTES:
-@app.route('/start_game', methods=['POST'])
-@login_required
-def start_game():
-    print("Received request to start_game")
-    if current_user.is_authenticated:
-        user_id = current_user.id
+#@app.route('/start_game', methods=['POST'])
 
-        original_board = request.json.get('board', None)
+@app.route("/start_game", methods=["GET"])
+#@login_required
+def get_board():
+    if request.method == "GET":
+        board = original_board
+        return jsonify({"board": board})
+# def start_game():
+#     print("Received request to start_game")
+#     if current_user.is_authenticated:
+#         user_id = current_user.id
 
-        if not original_board:
-            # Create a new game and set the player_id
-            game = Game(player_id=user_id, date_started=datetime.utcnow(), winner_id=None)
-            db.session.add(game)
-            db.session.commit()
+#         original_board = request.json.get('board', None)
 
-            return jsonify({"message": "Game started successfully.", "game_id": game.id}), 200
-        else:
-            # Retrieve the existing game using the user_id
-            existing_game = get_existing_game(user_id)
+#         if not original_board:
+#             # Create a new game and set the player_id
+#             game = Game(player_id=user_id, date_started=datetime.utcnow(), winner_id=None)
+#             db.session.add(game)
+#             db.session.commit()
 
-            if existing_game:
-                return jsonify({"message": "Existing game retrieved successfully.", "board": original_board}), 200
-            else:
-                # If the existing game is not found, you can return an error or handle it accordingly
-                return jsonify({"error": "Existing game not found."}), 404
-    else:
-        # Handle the case where the user is not authenticated
-        return jsonify({"error": "User not authenticated."}), 401
+#             return jsonify({"message": "Game started successfully.", "game_id": game.id}), 200
+#         else:
+#             # Retrieve the existing game using the user_id
+#             existing_game = get_existing_game(user_id)
+
+#             if existing_game:
+#                 return jsonify({"message": "Existing game retrieved successfully.", "board": original_board}), 200
+#             else:
+#                 # If the existing game is not found, you can return an error or handle it accordingly
+#                 return jsonify({"error": "Existing game not found."}), 404
+#     else:
+#         # Handle the case where the user is not authenticated
+#         return jsonify({"error": "User not authenticated."}), 401
     
 def get_existing_game(user_id):
     # Query the database to find an existing game for the given user_id
