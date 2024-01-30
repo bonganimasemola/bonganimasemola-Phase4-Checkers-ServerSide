@@ -61,32 +61,6 @@ def home():
 def load_user(user_id):
     return Player.query.get(int(user_id))
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        data = request.json
-        print(data)
-        username = data.get('username')
-        password = data.get('password')
-
-        user = Player.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            login_user(user)
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Login failed. Check your username and password.')
-
-    return render_template('login.html')
-
-
-def get_player_by_id(user_id):
-    with db.session.begin():
-        return Player.query.get(int(user_id))
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    return f'Hello, {current_user.username}! You are now logged in.'
 
 @app.route('/players', methods=['GET'])
 def get_players():
