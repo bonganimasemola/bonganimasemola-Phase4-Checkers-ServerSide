@@ -130,7 +130,7 @@ def logout():
 #@app.route('/start_game', methods=['POST'])
 
 @app.route("/start_game", methods=["GET"])
-#@login_required
+@login_required
 def get_board():
     if request.method == "GET":
         board = original_board
