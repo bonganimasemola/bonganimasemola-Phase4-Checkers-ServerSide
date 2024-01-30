@@ -6,7 +6,7 @@ db = SQLAlchemy()
 
 
 
-class Player(db.Model):
+class Player(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -20,14 +20,24 @@ class Player(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, str(password))
+    
+    def get_id(self):
+        return str(self.id)
 
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
     date_started = db.Column(db.DateTime, nullable=True)
     winner_id = db.Column(db.Integer, db.ForeignKey('player.id'))
     moves = db.relationship('Move', backref='game', lazy=True)
     pieces = db.relationship('Piece', backref='game', lazy=True)
+    
+    def is_active(self):
+        return True
+    
+    def get_existing_game(user_id):
+        return Game.query.filter_by(user_id=user_id).first()
 
 class Move(db.Model):
     id = db.Column(db.Integer, primary_key=True)

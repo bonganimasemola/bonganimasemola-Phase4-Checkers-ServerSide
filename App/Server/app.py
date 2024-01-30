@@ -1,11 +1,11 @@
-from flask import Flask, redirect, url_for, request, jsonify, render_template
+from flask import Flask, redirect, url_for, request, jsonify, render_template, flash
 from datetime import datetime
 from GameStatus import GameLogic
 from UpdateBoard import UpdateBoard
 from Moves import Moves
 from All_pieces import Bmoves, KingBMoves, Wmoves, KingWMoves
 from flask_cors import CORS
-from models import db, Player, Game, Move, Piece
+from models import db, Player, Game
 from werkzeug.security import check_password_hash
 import json
 from flask_login import LoginManager,login_user, login_required, logout_user, current_user, UserMixin
@@ -27,11 +27,6 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-#mock up User class for testing
-# class User(UserMixin):
-#     def __init__(self, user_id):
-#         self.id = user_id
-        
 
 
 
@@ -64,21 +59,24 @@ def home():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return Player.query.get(int(user_id))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        data = request.json
+        print(data)
+        username = data.get('username')
+        password = data.get('password')
+
         user = Player.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password, password):
+        if user and user.check_password(password):  # Use check_password method
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
             flash('Login failed. Check your username and password.')
-    return render_template('login.html')
 
+    return render_template('login.html')
 
 @app.route('/dashboard')
 @login_required
@@ -131,21 +129,36 @@ def logout():
 @app.route('/start_game', methods=['POST'])
 @login_required
 def start_game():
-    # user_id = Player.id  # Uncomment this line if using Flask-Login
-    user_id = 1  # Replace with your actual way of getting user id
+    if current_user.is_authenticated:
+        user_id = current_user.id
 
-    original_board = request.json.get('board', None)
+        original_board = request.json.get('board', None)
 
-    if not original_board:
-        
-        game = Game(date_started=datetime.utcnow(), winner_id=user_id)
-        db.session.add(game)
-        db.session.commit()
+        if not original_board:
+            # Create a new game and set the player_id
+            game = Game(player_id=user_id, date_started=datetime.utcnow(), winner_id=None)
+            db.session.add(game)
+            db.session.commit()
 
-        return jsonify({"message": "Game started successfully.", "game_id": game.id}), 200
+            return jsonify({"message": "Game started successfully.", "game_id": game.id}), 200
+        else:
+            # Retrieve the existing game using the user_id
+            existing_game = get_existing_game(user_id)
+
+            if existing_game:
+                return jsonify({"message": "Existing game retrieved successfully.", "board": original_board}), 200
+            else:
+                # If the existing game is not found, you can return an error or handle it accordingly
+                return jsonify({"error": "Existing game not found."}), 404
     else:
-        #
-        return jsonify({"message": "Existing game retrieved successfully.", "board": original_board}), 200
+        # Handle the case where the user is not authenticated
+        return jsonify({"error": "User not authenticated."}), 401
+
+# Add a helper function to retrieve an existing game
+# def get_existing_game(user_id):
+    # You need to implement the logic to retrieve an existing game based on the user_id
+    # For example, you can query the database for an ongoing game for the user
+    # return Game.query.filter_by(player_id=user_id, winner_id=None, is_draw=False).first()
 
 @app.route('/forfeit_game/<int:game_id>', methods=['POST'])
 @login_required
@@ -277,7 +290,7 @@ def validate_and_make_move(current_board, move):
     elif piece == "B": 
         moves_instance = Bmoves(current_board, move["from"])
     else:
-        return None, None  
+        return None  
 
     all_moves = moves_instance.moves()
 
@@ -287,7 +300,7 @@ def validate_and_make_move(current_board, move):
         promotion = check_for_promotion(updated_board, move)
         return updated_board, promotion
     else:
-        return None, None  
+        return None  
 
 
 def update_board(board, move):
