@@ -6,7 +6,6 @@ def is_within_board(x, y, board):
     return 0 <= x < len(board[0]) and 0 <= y < len(board)
 
 def PCMove(board):
-    random.seed()  # Initialize the pseudo-random number generator with a random seed
     
     for r in range(len(board)):
         for c in range(len(board[r])):
