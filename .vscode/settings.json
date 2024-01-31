@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "game",
+            "database": "${workspaceFolder:bonganimasemola-Phase4-Checkers-ServerSide}/App/Server/instance/site.db"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}

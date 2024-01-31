@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from All_pieces import Bmoves, KingBMoves
 from Moves import Moves
+from Checkers import makemove
 from UpdateBoard import UpdateBoard
 app = Flask(__name__, template_folder='/Users/bonganimasemola/Development/coding/PHASE4/bonganimasemola-Phase4-Checkers-ServerSide/App/Server/templates')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
@@ -94,18 +95,34 @@ def valid_moves():
     
     return {"error": True, "message": "invalid piece"}
 
-@app.route("/board/move", methods=['PUT'])
-def make_a_move():
-      data = request.get_json()
-      id = data['id']
-      to=data['to']
-      fr=data['from']
 
-      game=get_user_board(id)
-      board =game['board']
-      game_id=game['id']
+@app.route('/board/move', methods=['PUT'])
+def move():
+    data = request.get_json()
+    print(f"data {data}")
+    id = data['id']
+    to = data['to']
+    fr = data['from']
+
+    game_list = get_user_board(id)
+    if game_list:
+        game = game_list[0]  # Assuming you are interested in the first item in the list
+        board = game['board']
+        print(game_list)
+
+    # Rest of your code...
+
+
     
-      move = move(fr, to, board)
+    game_id=game['id']    
+    move = makemove(fr, to, board)
+    print(move)
+    if move['board']:
+        nb=move['board']
+        Game.query.filter_by(id=game_id).update({"board": json.dumps(nb)})
+    
+    return jsonify(move)
+
 
 if __name__ == '__main__':
     app.run(port = 5555, debug=True)

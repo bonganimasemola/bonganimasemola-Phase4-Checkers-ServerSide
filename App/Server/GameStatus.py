@@ -3,6 +3,7 @@ from All_pieces import Wmoves, KingWMoves
 class GameLogic:
     def __init__(self, board):
         self.board = board
+
 def white_has_possible_moves(board):
     for r in range(len(board)):
         for c in range(len(board[r])):
@@ -22,6 +23,7 @@ def white_has_possible_moves(board):
 
 
 
+
 def promote(board):
     Warr = board[7]
     Barr= board[0]
@@ -34,6 +36,7 @@ def promote(board):
            board[7][i] = "KW"
         if BP == "B":
            board[0][i] = "KB"
+    return board
 
 def PCMOve(board):
     from All_pieces import Wmoves, KingWMoves
@@ -52,3 +55,4 @@ def PCMOve(board):
                     if len(kmove) >= 1:
                         return kmove[0]
     return False
+
