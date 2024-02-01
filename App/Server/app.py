@@ -42,7 +42,14 @@ original_board = [
            [' ', 'B', ' ', 'B', ' ', 'B', ' ', 'B'], 
            ['B', ' ', 'B', ' ', 'B', ' ', 'B', ' ']]}
 
-
+[[' ', 'W', ' ', 'W', ' ', 'W', ' ', 'W'], 
+['W', ' ', 'W', ' ', 'W', ' ', 'W', ' '],
+[' ', 'W', ' ', 'W', ' ', 'W', ' ', 'W'],
+[' ', ' ', ' ', ' ', 'X', ' ', ' ', ' '],
+[' ', ' ', ' ', 'B', ' ', 'X', ' ', 'X'],
+['B', ' ', '', ' ', 'B', ' ', 'B', ' '],
+[' ', 'B', ' ', 'B', ' ', 'B', ' ', 'B'], 
+['B', ' ', 'B', ' ', 'B', ' ', 'B', ' ']]
 
 @app.route('/')
 def home():
@@ -73,42 +80,55 @@ def get_user_board(id):
     user = User.query.filter_by(id=id).first()
     board = json.loads(user.game.board)
     return {'board': board, 'id': user.game.id}
+
 @app.route("/board/<int:id>", methods=['GET'])
 def get_board(id):
     user = User.query.filter_by(id=id).first()
     board=json.loads(user.game.board)
     return jsonify(board)
 
-@app.route("/board/valid-moves", methods=['POST'])
+@app.route("/valid-moves", methods=['POST'])
 def valid_moves():
-    data = request.get_json()
-    user_id = data["id"]
-    board= get_user_board(user_id)
-    print(board)
+    try:
+        data = request.get_json()
+        user_id = data.get("id")
+        if user_id is None:
+            return jsonify({"error": True, "message": "User ID not provided"}), 400
 
-    co=data['FROM']
+        board_data = get_user_board(user_id)
+        board = board_data.get('board')
+        if board is None:
+            return jsonify({"error": True, "message": "Invalid user ID"}), 404
 
-    piece = board[co['y']][co['x']]  
-    print(f"piece is, {piece}")
+        print("Received board:", board)
 
-    updated = UpdateBoard(board=board)
-    if piece == 'B':
-        b = Bmoves(board, co)
-        bmoves= b.moves()
-        new_board = updated.valid_moves(bmoves)
-        return jsonify({"board": new_board, "valid_moves":bmoves})
-    
-    if piece == 'KB':
-        kb = KingBMoves(board, co)
-        kbmoves = kb.moves()
-        new_board = updated.valid_moves(kbmoves)
-        return jsonify({"board": new_board, "valid_moves":kbmoves})
-    
-    return {"error": True, "message": "invalid piece"}
+        from_coordinates = data.get('FROM')
+        if from_coordinates is None or 'x' not in from_coordinates or 'y' not in from_coordinates:
+            return jsonify({"error": True, "message": "Invalid FROM coordinates"}), 400
 
+        x, y = from_coordinates['x'], from_coordinates['y']
+        piece = board[y][x]
+        print(f"Piece at ({x}, {y}): {piece}")
 
-from flask import request, jsonify
-import json
+        updated_board = UpdateBoard(board=board)
+
+        if piece == 'B':
+            b = Bmoves(board, from_coordinates)
+            bmoves = b.moves()
+            new_board = updated_board.valid_moves(bmoves)
+            return jsonify({"board": new_board, "valid_moves": bmoves})
+
+        if piece == 'KB':
+            kb = KingBMoves(board, from_coordinates)
+            kbmoves = kb.moves()
+            new_board = updated_board.valid_moves(kbmoves)
+            return jsonify({"board": new_board, "valid_moves": kbmoves})
+
+        return jsonify({"error": True, "message": "Invalid piece"}), 400
+
+    except Exception as e:
+        print(f"Error in valid_moves: {e}")
+        return jsonify({"error": True, "message": "Internal server error"}), 500
 
 @app.route("/board/move", methods=["PUT"])
 def move():
