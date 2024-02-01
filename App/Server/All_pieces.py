@@ -1,6 +1,8 @@
 from Moves import Moves
 
 
+# Update the Bmoves class in All_pieces.py
+# Update the Bmoves class in All_pieces.py
 class Bmoves(Moves):
     def __init__(self, board, co):
         Black_moves =  [
@@ -11,6 +13,8 @@ class Bmoves(Moves):
         ]
       
         super().__init__(board, all_moves=Black_moves, piece="B", co=co)
+
+
 
 class Wmoves(Moves):
     def __init__(self, board, co):

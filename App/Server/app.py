@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, json, request
+from flask import Flask, jsonify, request
+import json
 from models import db,User, Game
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -6,6 +7,7 @@ from All_pieces import Bmoves, KingBMoves
 from Moves import Moves
 from Checkers import makemove
 from UpdateBoard import UpdateBoard
+
 app = Flask(__name__, template_folder='/Users/bonganimasemola/Development/coding/PHASE4/bonganimasemola-Phase4-Checkers-ServerSide/App/Server/templates')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  
@@ -31,7 +33,16 @@ original_board = [
     ["B", " ", "B", " ", "B", " ", "B", " "],
 ]
 
- 
+{'board': [[' ', 'W', ' ', 'W', ' ', 'W', ' ', 'W'], 
+           ['W', ' ', 'W', ' ', 'W', ' ', 'W', ' '], 
+           [' ', 'W', ' ', 'W', ' ', 'W', ' ', 'W'], 
+           [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '], 
+           [' ', ' ', ' ', 'B', ' ', ' ', ' ', ' '], 
+           ['B', ' ', '', ' ', 'B', ' ', 'B', ' '], 
+           [' ', 'B', ' ', 'B', ' ', 'B', ' ', 'B'], 
+           ['B', ' ', 'B', ' ', 'B', ' ', 'B', ' ']]}
+
+
 
 @app.route('/')
 def home():
@@ -61,7 +72,7 @@ def create_user():
 def get_user_board(id):
     user = User.query.filter_by(id=id).first()
     board = json.loads(user.game.board)
-    return board
+    return {'board': board, 'id': user.game.id}
 @app.route("/board/<int:id>", methods=['GET'])
 def get_board(id):
     user = User.query.filter_by(id=id).first()
@@ -96,32 +107,37 @@ def valid_moves():
     return {"error": True, "message": "invalid piece"}
 
 
-@app.route('/board/move', methods=['PUT'])
+from flask import request, jsonify
+import json
+
+@app.route("/board/move", methods=["PUT"])
 def move():
     data = request.get_json()
-    print(f"data {data}")
-    id = data['id']
-    to = data['to']
+    game_id = data['id']
     fr = data['from']
+    to = data['to']
 
-    game_list = get_user_board(id)
-    if game_list:
-        game = game_list[0]  # Assuming you are interested in the first item in the list
-        board = game['board']
-        print(game_list)
+    # Assuming get_user_board returns a dictionary with 'board' and 'id'
+    user_game = get_user_board(game_id)
+    print(f'{user_game}')
+    board = user_game['board']
+    print(f'{board}')
+    game_id = user_game['id']
+    print(f'{game_id}')
 
-    # Rest of your code...
+    move_result = makemove(fr, to, board)
+    print(move_result)
 
+    if 'board' in move_result:
+        nb = move_result['board']
+        # Convert nb to JSON-serializable format (list or any other appropriate format)
+        nb_serializable = list(nb)
+        Game.query.filter_by(id=game_id).update({'board': json.dumps(nb_serializable)})
+        db.session.commit()
 
-    
-    game_id=game['id']    
-    move = makemove(fr, to, board)
-    print(move)
-    if move['board']:
-        nb=move['board']
-        Game.query.filter_by(id=game_id).update({"board": json.dumps(nb)})
-    
-    return jsonify(move)
+    print(move_result)
+    return jsonify(move_result)
+
 
 
 if __name__ == '__main__':
