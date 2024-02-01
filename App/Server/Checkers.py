@@ -1,10 +1,11 @@
 def makemove(fr, to, board):
     from UpdateBoard import UpdateBoard
     from All_pieces import Bmoves, KingBMoves, Wmoves, KingWMoves
+    from GameStatus import white_has_possible_moves, promote, PCMove, black_has_possible_moves
 
     piece = board[fr['y']][fr['x']]
-
-    newboard = board  # Initialize newboard with the original board
+    
+    new_board = board  # Initialize new_board with the original board
 
     if piece == "B" or piece == "KB":
         if piece == "B":
@@ -23,8 +24,37 @@ def makemove(fr, to, board):
                     if to_coords['x'] == to['x'] and to_coords['y'] == to['y']:
                         # Directly use UpdateBoard without the unused update variable
                         if m['capture']:
-                            newboard = UpdateBoard(newboard).move_capture(m)
+                            new_board = UpdateBoard(new_board).move_capture(m)
                         else:
-                            newboard = UpdateBoard(newboard).move_only(m)
+                            new_board = UpdateBoard(new_board).move_only(m)
 
-    return {"board": newboard}
+    black_w = white_has_possible_moves(new_board)
+    if black_w == False:
+        return {"board": new_board, "win": "b won"}
+    #promote(new_board)
+
+    # white_w = white_has_possible_moves(new_board)
+    # if white_w == False:
+    #     return {"board": new_board, "win": "b"}
+
+    promote(new_board)
+
+    pc_m = PCMove(new_board)
+    if pc_m == False:
+        return {"board": new_board, "win": "b"}
+    if pc_m == ['capture']:
+        new_board = UpdateBoard(new_board).move_capture(pc_m)
+    else:
+        new_board = UpdateBoard(new_board).move_only(pc_m)
+    
+    promote(new_board)
+
+    white_w = black_has_possible_moves(new_board)
+
+    if white_w == False:
+        return {"board": new_board, "win": "w"}
+    
+    return {"board": new_board, "win": "False"}
+
+    # The following line is unreachable due to the return statement above
+    # return {"error": True, "message": "invalid"}
