@@ -5,7 +5,7 @@ def makemove(fr, to, board):
 
     piece = board[fr['y']][fr['x']]
     
-    new_board = board  # Initialize new_board with the original board
+    new_board = board 
 
     if piece == "B" or piece == "KB":
         if piece == "B":
@@ -22,7 +22,7 @@ def makemove(fr, to, board):
                 to_coords = m['to']
                 if 'x' in to_coords and 'y' in to_coords and 'x' in to and 'y' in to:
                     if to_coords['x'] == to['x'] and to_coords['y'] == to['y']:
-                        # Directly use UpdateBoard without the unused update variable
+                        
                         if m['capture']:
                             new_board = UpdateBoard(new_board).move_capture(m)
                         else:
@@ -56,5 +56,4 @@ def makemove(fr, to, board):
     
     return {"board": new_board, "win": "False"}
 
-    # The following line is unreachable due to the return statement above
-    # return {"error": True, "message": "invalid"}
+    

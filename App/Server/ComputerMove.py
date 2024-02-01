@@ -23,19 +23,19 @@ def PCMove(board):
                 regular_moves_kw = [move for move in KW_all_moves if not move.get("capture") and is_within_board(move["to"]["x"], move["to"]["y"], board)]
                 
                 if capture_moves_wm or capture_moves_kw:
-                    # Priority to capture moves
+                   
                     all_capture_moves = capture_moves_wm + capture_moves_kw
                     computer_move = random.choice(all_capture_moves)
                     update_board = UpdateBoard(board)
                     board = update_board.move_capture(computer_move)
                     return computer_move, board
                 elif regular_moves_wm or regular_moves_kw:
-                    # If no capture, make a regular move
+                   
                     all_regular_moves = regular_moves_wm + regular_moves_kw
                     computer_move = random.choice(all_regular_moves)
                     update_board = UpdateBoard(board)
                     board = update_board.move_only(computer_move)
                     return computer_move, board
     
-    return None, board  # No available moves for the computer
+    return None, board  
 

@@ -71,21 +71,21 @@ def login():
     if not username or not password:
         return jsonify({'error': 'Missing username or password'}), 400
 
-    # Query the database to find the user by username
+   
     user = User.query.filter_by(username=username).first()
 
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    # Check if the provided password matches the stored password
+    
     if user.password != password:
         return jsonify({'error': 'Invalid password'}), 401
 
-    # If both username and password are valid, return user details
+    
     user_details = {
         'id': user.id,
         'username': user.username,
-        # Add other user details as needed
+        
     }
 
     return jsonify(user_details), 200
@@ -134,7 +134,7 @@ def move():
     fr = data['from']
     to = data['to']
 
-    # Assuming get_user_board returns a dictionary with 'board' and 'id'
+   
     user_game = get_user_board(game_id)
     print(f'{user_game}')
     board = user_game['board']
@@ -147,7 +147,6 @@ def move():
 
     if 'board' in move_result:
         nb = move_result['board']
-        # Convert nb to JSON-serializable format (list or any other appropriate format)
         nb_serializable = list(nb)
         Game.query.filter_by(id=game_id).update({'board': json.dumps(nb_serializable)})
         db.session.commit()

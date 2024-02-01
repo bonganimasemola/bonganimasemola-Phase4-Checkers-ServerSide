@@ -10,16 +10,16 @@ from app import app
 
 app = Flask(__name__)
 
-# Initialize the Flask application context
+
 with app.app_context():
-    # Initialize the SQLAlchemy extension
+    
     db.init_app(app)
     
-    # Create the database tables (if they do not exist)
+    
     db.create_all()
 
 def seed_data():
-    # Your seed data logic goes here
+    
     with app.app_context():
         player1 = Player(username='Player1')
         player2 = Player(username='Player2')
