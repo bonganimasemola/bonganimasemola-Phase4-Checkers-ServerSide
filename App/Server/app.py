@@ -20,20 +20,22 @@ with app.app_context():
     db.create_all()
 
 original_board = [
-    [" ", "W", " ", "W", " ", "W", " ", "W"],
+    [" ", "B", " ", "W", " ", "W", " ", "W"],
     ["W", " ", "W", " ", "W", " ", "W", " "],
     [" ", "W", " ", "W", " ", "W", " ", "W"],
     [" ", " ", " ", " ", " ", " ", " ", " "],
     [" ", " ", " ", "B", " ", " ", " ", " "],
     ["B", " ", "", " ", "B", " ", "B", " "],
     [" ", "B", " ", "B", " ", "B", " ", "B"],
-    ["B", " ", "B", " ", "B", " ", "B", " "],
+    ["B", " ", "B", " ", "W", " ", "B", " "],
 ]
 
 @app.route('/')
 def home():
     data = {'Server side': 'Checkers'}
     return jsonify(data), 200
+
+
 
 @app.route('/user', methods=['POST'])
 def create_user():
@@ -94,7 +96,7 @@ def get_board(id):
     board = json.loads(user.game.board)
     return jsonify(board)
 
-@app.route("/board/valid-moves", methods=['POST'])
+@app.route("/valid-moves", methods=['POST'])
 def valid_moves():
     data = request.get_json()
     user_id = data["id"]
