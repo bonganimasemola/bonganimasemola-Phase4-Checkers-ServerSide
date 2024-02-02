@@ -20,10 +20,10 @@ class Wmoves(Moves):
     def __init__(self, board, co):
        
         white_moves = [
-            {"to": {"x": 1, "y": 1}, "capture": False},
-            {"to": {"x": -1, "y": 1}, "capture": False},
-            {"to": {"x": 2, "y": 2}, "capture": {"x": -1, "y": -1}},
-            {"to": {"x": -2, "y": 2}, "capture": {"x": 1, "y": -1}},
+            {"to": {"x": 1, "y": 1}, "capture": False},#1,2>>>2,3
+            {"to": {"x": -1, "y": 1}, "capture": False},#1,2>>>0,3
+            {"to": {"x": 2, "y": 2}, "capture": {"x": 1, "y": 1}},#1,2>CP2,3>>3,4
+            {"to": {"x": -2, "y": 2}, "capture": {"x": -1, "y": 1}},#3,2>>cp2,3>>uM1,4//
         ]
         super().__init__(board, all_moves=white_moves, piece="W", co=co)
 
